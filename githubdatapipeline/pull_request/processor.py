@@ -1,4 +1,6 @@
-import re, sys
+import re
+import sys
+
 
 def parse_pull_request(pull_request_body):
     issue_numbers = []
@@ -11,9 +13,9 @@ def parse_pull_request(pull_request_body):
 class PrProcessor:
     def __init__(self):
         return
-    
+
     def getLinkedIssues(self, pullRequest):
         linkedIssues = []
-        print(pullRequest, file = sys.stderr)
-        linkedIssues+= parse_pull_request(pullRequest["body"])
+        print(pullRequest, file=sys.stderr)
+        linkedIssues += parse_pull_request(pullRequest["body"])
         return linkedIssues

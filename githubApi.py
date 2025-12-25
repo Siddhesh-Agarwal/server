@@ -1,2 +1,3 @@
-from utils.jwt_generator import GenerateJWT
+from utils import GenerateJWT
+
 print(GenerateJWT().__call__())

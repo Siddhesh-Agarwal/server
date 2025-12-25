@@ -1,15 +1,16 @@
 import smtplib
 from email.message import EmailMessage
 
+
 def generateMappingTemplate(org, email, mappings):
-    mappingRows = ''
+    mappingRows = ""
     for mapping in mappings:
-        mappingRows+=f'''<tr>
+        mappingRows += f"""<tr>
                             <td style="font-size: 15px; color: #000000; padding: 10px 5px 10px 10px; width: 50%;">{mapping["name"]}</td>
                             <td style="border: 2px solid #d9d9d9; font-size: 15px; color: #000000; padding: 10px 5px 10px 5px; width: 50%;text-align: center; vertical-align: middle;">{mapping["product"]}</td>
                             <td style="padding: 10px;"></td>
-                          </tr>'''
-    registrationMappingEmail = f'''<!doctype html>
+                          </tr>"""
+    registrationMappingEmail = f"""<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
@@ -427,9 +428,11 @@ def generateMappingTemplate(org, email, mappings):
   </div>
 </body>
 
-</html>'''
+</html>"""
     return registrationMappingEmail
-registrationAknowledgementEmail = f'''<!doctype html>
+
+
+registrationAknowledgementEmail = """<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
@@ -441,37 +444,37 @@ registrationAknowledgementEmail = f'''<!doctype html>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style type="text/css">
-    #outlook a {{
+    #outlook a {
       padding: 0;
-    }}
+    }
 
-    body {{
+    body {
       margin: 0;
       padding: 0;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
-    }}
+    }
 
     table,
-    td {{
+    td {
       border-collapse: collapse;
       mso-table-lspace: 0pt;
       mso-table-rspace: 0pt;
-    }}
+    }
 
-    img {{
+    img {
       border: 0;
       height: auto;
       line-height: 100%;
       outline: none;
       text-decoration: none;
       -ms-interpolation-mode: bicubic;
-    }}
+    }
 
-    p {{
+    p {
       display: block;
       margin: 13px 0;
-    }}
+    }
   </style>
   <!--[if mso]>
         <noscript>
@@ -485,7 +488,7 @@ registrationAknowledgementEmail = f'''<!doctype html>
         <![endif]-->
   <!--[if lte mso 11]>
         <style type="text/css">
-          .mj-outlook-group-fix {{ width:100% !important; }}
+          .mj-outlook-group-fix { width:100% !important; }
         </style>
         <![endif]-->
   <!--[if !mso]><!-->
@@ -497,89 +500,89 @@ registrationAknowledgementEmail = f'''<!doctype html>
   </style>
   <!--<![endif]-->
   <style type="text/css">
-    @media only screen and (min-width:480px) {{
-      .mj-column-per-80 {{
+    @media only screen and (min-width:480px) {
+      .mj-column-per-80 {
         width: 80% !important;
         max-width: 80%;
-      }}
+      }
 
-      .mj-column-per-20 {{
+      .mj-column-per-20 {
         width: 20% !important;
         max-width: 20%;
-      }}
+      }
 
-      .mj-column-per-100 {{
+      .mj-column-per-100 {
         width: 100% !important;
         max-width: 100%;
-      }}
+      }
 
-      .mj-column-per-30 {{
+      .mj-column-per-30 {
         width: 30% !important;
         max-width: 30%;
-      }}
+      }
 
-      .mj-column-per-9 {{
+      .mj-column-per-9 {
         width: 9% !important;
         max-width: 9%;
-      }}
+      }
 
-      .mj-column-per-8 {{
+      .mj-column-per-8 {
         width: 8% !important;
         max-width: 8%;
-      }}
+      }
 
-      .mj-column-per-10 {{
+      .mj-column-per-10 {
         width: 10% !important;
         max-width: 10%;
-      }}
-    }}
+      }
+    }
   </style>
   <style media="screen and (min-width:480px)">
-    .moz-text-html .mj-column-per-80 {{
+    .moz-text-html .mj-column-per-80 {
       width: 80% !important;
       max-width: 80%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-20 {{
+    .moz-text-html .mj-column-per-20 {
       width: 20% !important;
       max-width: 20%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-100 {{
+    .moz-text-html .mj-column-per-100 {
       width: 100% !important;
       max-width: 100%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-30 {{
+    .moz-text-html .mj-column-per-30 {
       width: 30% !important;
       max-width: 30%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-9 {{
+    .moz-text-html .mj-column-per-9 {
       width: 9% !important;
       max-width: 9%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-8 {{
+    .moz-text-html .mj-column-per-8 {
       width: 8% !important;
       max-width: 8%;
-    }}
+    }
 
-    .moz-text-html .mj-column-per-10 {{
+    .moz-text-html .mj-column-per-10 {
       width: 10% !important;
       max-width: 10%;
-    }}
+    }
   </style>
   <style type="text/css">
-    @media only screen and (max-width:480px) {{
-      table.mj-full-width-mobile {{
+    @media only screen and (max-width:480px) {
+      table.mj-full-width-mobile {
         width: 100% !important;
-      }}
+      }
 
-      td.mj-full-width-mobile {{
+      td.mj-full-width-mobile {
         width: auto !important;
-      }}
-    }}
+      }
+    }
   </style>
 </head>
 
@@ -811,15 +814,16 @@ registrationAknowledgementEmail = f'''<!doctype html>
   </div>
 </body>
 
-</html>'''
+</html>"""
 
-def generateHTMLForEmail(organisation,email, repos, auth_link):
-    repository_rows = ''
+
+def generateHTMLForEmail(organisation, email, repos, auth_link):
+    repository_rows = ""
     for repo in repos:
-        repository_rows+=f'''<tr>
+        repository_rows += f"""<tr>
             <td>{repo["name"]}</td>
             <td>{repo["product"]}</td>
-        </tr>'''
+        </tr>"""
     TopHTML = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -894,39 +898,49 @@ C4GT Support Bot</p>
 '''
     return TopHTML
 
+
 class NewRegistration:
     def __init__(self):
         return
-    
+
     def send_email(self, subject, body, to_email, html=None):
         # Your email and application-specific password
-        sender_email = 'c4gtsamagra@gmail.com'
-        sender_password = 'kikejugtijfsmfrf'
+        sender_email = "c4gtsamagra@gmail.com"
+        sender_password = "kikejugtijfsmfrf"
 
         # Set up the email content
         msg = EmailMessage()
         msg.set_content(body)
-        msg['Subject'] = subject
-        msg['From'] = sender_email
-        msg['To'] = to_email
+        msg["Subject"] = subject
+        msg["From"] = sender_email
+        msg["To"] = to_email
         if html:
-            msg.add_alternative(html, subtype='html')
+            msg.add_alternative(html, subtype="html")
 
         # Send the email using SMTP
         try:
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.ehlo()
                 server.login(sender_email, sender_password)
                 server.send_message(msg)
                 print(f"Email sent to {to_email}!")
         except Exception as e:
             print(f"Error occurred: {e}")
-    
-    def createNewReg(self,data):
-        html = generateHTMLForEmail(data["organisation"], data["email"], data["repos"], data["auth_link"])
-        registrationMappingEmail = generateMappingTemplate(data["organisation"], data["email"], data["repos"])
-        self.send_email("New Registration",'', "kanav@samagragovernance.in", html)
-        self.send_email("Mapping Test", '', "kanav@samagragovernance.in", registrationMappingEmail)
-        self.send_email("Mapping Test", '', "kanav@samagragovernance.in", registrationAknowledgementEmail)
 
-        
+    def createNewReg(self, data):
+        html = generateHTMLForEmail(
+            data["organisation"], data["email"], data["repos"], data["auth_link"]
+        )
+        registrationMappingEmail = generateMappingTemplate(
+            data["organisation"], data["email"], data["repos"]
+        )
+        self.send_email("New Registration", "", "kanav@samagragovernance.in", html)
+        self.send_email(
+            "Mapping Test", "", "kanav@samagragovernance.in", registrationMappingEmail
+        )
+        self.send_email(
+            "Mapping Test",
+            "",
+            "kanav@samagragovernance.in",
+            registrationAknowledgementEmail,
+        )

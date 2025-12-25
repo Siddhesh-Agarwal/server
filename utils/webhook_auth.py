@@ -1,8 +1,11 @@
-import hmac,hashlib,json
+import hmac
+import hashlib
+import json
 
-#FUNCTION TO VERIFY SECRET TOKEN
+
+# FUNCTION TO VERIFY SECRET TOKEN
 async def verify_github_webhook(request, secret_key):
-    signature = request.headers.get('X-Hub-Signature-256')
+    signature = request.headers.get("X-Hub-Signature-256")
 
     if signature is None:
         return False, "Signature header missing."
@@ -15,10 +18,15 @@ async def verify_github_webhook(request, secret_key):
             return False, "No JSON payload found in the request."
 
         # Convert the payload to a JSON string
-        payload_string = json.dumps(payload, separators=(',', ':'))
+        payload_string = json.dumps(payload, separators=(",", ":"))
 
         # Generate the expected signature using HMAC with SHA-256
-        expected_signature = "sha256=" + hmac.new(secret_key.encode(), payload_string.encode('utf-8'), hashlib.sha256).hexdigest()
+        expected_signature = (
+            "sha256="
+            + hmac.new(
+                secret_key.encode(), payload_string.encode("utf-8"), hashlib.sha256
+            ).hexdigest()
+        )
 
         # Compare the expected signature with the received signature
         if hmac.compare_digest(expected_signature, signature):

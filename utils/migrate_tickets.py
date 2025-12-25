@@ -1,22 +1,20 @@
-import logging
 from shared_migrations.db.server import ServerQueries
 import aiohttp
 from datetime import datetime
+
 
 class MigrateTickets:
     def __init__(self):
         self.postgres_client = ServerQueries()
         return
-    
 
     def convert_to_datetime(self, date_str):
-        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
 
     async def migrate_ccbp_tickets(self):
         try:
-            
-            ccbp_tickets = await self.postgres_client.readAll('ccbp_tickets')
-            issues_to_insert = []
+            ccbp_tickets = await self.postgres_client.readAll("ccbp_tickets")
+            # issues_to_insert = []
 
             for ticket in ccbp_tickets:
                 # Create an Issues object with mapped fields from CcbpTickets
@@ -27,7 +25,7 @@ class MigrateTickets:
                 #     if org and (org_exist is None):
                 #         new_org = await self.postgres_client.add_data(data={"name":org}, table_name="community_orgs")
                 #         org_exist = await self.postgres_client.get_data("name", "community_orgs", org)
-                # else: 
+                # else:
                 #     org_exist = None
 
                 # created_at = ticket['created_at'].strftime('%Y-%m-%dT%H:%M:%SZ') if ticket['created_at'] else None
@@ -61,43 +59,45 @@ class MigrateTickets:
                 #     continue
 
                 data = {
-                    "assignee": ticket['assignees'],
-                    "mentor": ticket['mentors'],
-                    "issue_id": ticket['issue_id']
+                    "assignee": ticket["assignees"],
+                    "mentor": ticket["mentors"],
+                    "issue_id": ticket["issue_id"],
                 }
                 await self.migrate_ticket_contributor(data)
-                
-            return 'success'
+
+            return "success"
         except Exception as e:
-            print('exception occured ', e)
-            return 'failed'
-    
+            print("exception occured ", e)
+            return "failed"
 
     async def migrate_ticket_contributor(self, data):
         try:
             assignee = data["assignee"][0]
-            mentor = data["mentor"][0]
+            # mentor = data["mentor"][0]
             issue_id = data["issue_id"]
 
-
-            issue = await self.postgres_client.get_data("issue_id","issues", issue_id)
+            issue = await self.postgres_client.get_data("issue_id", "issues", issue_id)
 
             if assignee:
-                url = f'https://api.github.com/users/{assignee}'
+                url = f"https://api.github.com/users/{assignee}"
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as response:
                         assignee_data = await response.json()
                 if assignee_data:
-                    user = await self.postgres_client.get_data("github_id","contributors_registration", assignee_data["id"])
+                    user = await self.postgres_client.get_data(
+                        "github_id", "contributors_registration", assignee_data["id"]
+                    )
                     contributors_data = {
-                                    "issue_id": issue[0]['id'],
-                                    "role": 1,
-                                    "contributor_id": user[0]["id"] if user else None,
-                                    "created_at":str(datetime.now()),
-                                    "updated_at":str(datetime.now())
-                                }
-                    inserted_data = await self.postgres_client.add_data(contributors_data, "issue_contributors")
-                    print('inserted contributor is ', inserted_data)
+                        "issue_id": issue[0]["id"],
+                        "role": 1,
+                        "contributor_id": user[0]["id"] if user else None,
+                        "created_at": str(datetime.now()),
+                        "updated_at": str(datetime.now()),
+                    }
+                    inserted_data = await self.postgres_client.add_data(
+                        contributors_data, "issue_contributors"
+                    )
+                    print("inserted contributor is ", inserted_data)
 
             # if mentor:
             #     url = f'https://api.github.com/users/{mentor}'
@@ -114,8 +114,8 @@ class MigrateTickets:
             #                 "mentor_github_id": angel_mentor_id,
             #                 "issue_id": issue[0]['id']
             #             }
-            #             inserted_mentor_not_added_data = await self.postgres_client.add_data(mentor_not_added, "mentor_not_added") 
-            #             # print('mentor not added data ', inserted_mentor_not_added_data)       
+            #             inserted_mentor_not_added_data = await self.postgres_client.add_data(mentor_not_added, "mentor_not_added")
+            #             # print('mentor not added data ', inserted_mentor_not_added_data)
 
             #     if angel_mentor_detials:
             #         mentor_data = {
@@ -127,9 +127,9 @@ class MigrateTickets:
             #         }
             #         inserted_mentor = await self.postgres_client.add_data(mentor_data, "issue_mentors")
             #         print('inserted mentor is ', inserted_mentor)
-            
-            return 'success'
+
+            return "success"
 
         except Exception as e:
-            print('exception occured ', e)
-            return 'failed'
+            print("exception occured ", e)
+            return "failed"

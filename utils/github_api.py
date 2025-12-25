@@ -1,20 +1,21 @@
-from utils.jwt_generator import GenerateJWT
+# import os
+from utils import GenerateJWT
 import aiohttp
+
+
 class GithubAPI:
     def __init__(self):
         self.headers = {
-            'Accept': 'application/vnd.github+json',
-            # 'Authorization': f'Bearer {os.getenv("GithubPAT")}'
+            "Accept": "application/vnd.github+json",
+            # 'Authorization': f'Bearer {os.environ["GithubPAT"]}'
         }
         return
-    
+
     async def authenticate_app_as_installation(self, repo_owner):
         installation_id = 0
         jwt = GenerateJWT().__call__()
         url = "https://api.github.com/app/installations"
-        headers = {
-            "Authorization": f"Bearer {jwt}"
-        }
+        headers = {"Authorization": f"Bearer {jwt}"}
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
@@ -31,6 +32,3 @@ class GithubAPI:
                 async with session.post(url, headers=headers) as token_response:
                     token_req = await token_response.json()
                     return token_req["token"]
-
-        
-

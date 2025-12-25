@@ -1,61 +1,63 @@
-import logging, httpx, os, re, aiohttp
-
-from sqlalchemy.util import ellipses_string
+import logging
+import httpx
+import os
+import re
 
 from handlers.EventHandler import EventHandler
 from datetime import datetime
-from utils.user_activity import UserActivity
+from utils import UserActivity
 from shared_migrations.db.server import ServerQueries
 
-class Pull_requestHandler(EventHandler):
 
+class Pull_requestHandler(EventHandler):
     def convert_to_datetime(self, date_str):
-        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
-    
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
+
     def extract_issue_number(self, title):
-        match = re.search(r'#(\d+)', title)
+        match = re.search(r"#(\d+)", title)
         if match:
-            return int(match.group(1))  
+            return int(match.group(1))
         return None
-    
+
     async def get_issue_data(self, owner, repo, issue_number):
         try:
-            GITHUB_TOKEN = os.getenv('API_TOKEN')
-            print('github token is ', GITHUB_TOKEN)
+            GITHUB_TOKEN = os.environ["GithubPAT"]
+            print("github token is ", GITHUB_TOKEN)
             headers = {
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {GITHUB_TOKEN}",
-                "X-GitHub-Api-Version": "2022-11-28"
+                "X-GitHub-Api-Version": "2022-11-28",
             }
-            
-            GITHUB_ISSUE_URL = "https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
-            print('inside get issue id for issue number ',issue_number )
+
+            GITHUB_ISSUE_URL = (
+                "https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
+            )
+            print("inside get issue id for issue number ", issue_number)
             description_url = GITHUB_ISSUE_URL.format(
-                owner=owner, repo=repo, issue_number=issue_number)
+                owner=owner, repo=repo, issue_number=issue_number
+            )
             async with httpx.AsyncClient() as client:
                 issue_response = await client.get(description_url, headers=headers)
-                print('issue response inside get issue id for pr is ', issue_response)
+                print("issue response inside get issue id for pr is ", issue_response)
                 if issue_response.status_code == 200:
-                    
                     issue_details = issue_response.json()
-                    print('issue_details after fetching is ', issue_details)
+                    print("issue_details after fetching is ", issue_details)
                     issue_id = issue_details["id"]
-                    print('issue id after fetching ', issue_id)
+                    print("issue id after fetching ", issue_id)
                     return issue_id
-                
+
             return None
         except Exception as e:
-            print('Exception occured while getting issue data ', e)
+            print("Exception occured while getting issue data ", e)
             return None
-    
 
     async def handle_event(self, data, dummy_ps_client):
         # Implement your logic for handling issue events here
         try:
-            print('inside pull request handler ', data) 
+            print("inside pull request handler ", data)
 
             postgres_client = ServerQueries()
-            
+
             merged_by = None
             merged_by_username = None
             merged_at = None
@@ -63,82 +65,97 @@ class Pull_requestHandler(EventHandler):
             raised_at = None
             api_url = None
 
-
             pull_request_data = data.get("pull_request")
             if pull_request_data is not None:
                 merged_by_data = pull_request_data.get(merged_by)
                 if merged_by_data is not None:
-                    merged_by = merged_by_data.get('id', None)
-                    merged_by_username = merged_by_data.get('login', None)
+                    merged_by = merged_by_data.get("id", None)
+                    merged_by_username = merged_by_data.get("login", None)
 
-                if pull_request_data.get('merged_at') is not None:
-                    merged_at = self.convert_to_datetime(pull_request_data.get('merged_at'))
-                if pull_request_data.get('created_at') is not None:
-                    created_at = self.convert_to_datetime(pull_request_data.get('created_at', None))
-                if pull_request_data.get('updated_at') is not None:
-                    raised_at = self.convert_to_datetime(pull_request_data.get('updated_at', None))
+                if pull_request_data.get("merged_at") is not None:
+                    merged_at = self.convert_to_datetime(
+                        pull_request_data.get("merged_at")
+                    )
+                if pull_request_data.get("created_at") is not None:
+                    created_at = self.convert_to_datetime(
+                        pull_request_data.get("created_at", None)
+                    )
+                if pull_request_data.get("updated_at") is not None:
+                    raised_at = self.convert_to_datetime(
+                        pull_request_data.get("updated_at", None)
+                    )
 
-                api_url = pull_request_data.get('url', None)
+                api_url = pull_request_data.get("url", None)
 
-                
             issue_id = None
-
 
             try:
                 pr_title = data.get("pull_request", {}).get("title", None)
                 if pr_title is not None:
                     issue_number = self.extract_issue_number(pr_title)
                     if issue_number:
-                        url_parts = api_url.split('/')
+                        url_parts = api_url.split("/")
                         owner = url_parts[4]
                         repo = url_parts[5]
 
-                        issue_link = f"https://github.com/{owner}/{repo}/issues/{issue_number}"
-                        issue_data = await postgres_client.get_data('link', 'issues',  issue_link)
+                        issue_link = (
+                            f"https://github.com/{owner}/{repo}/issues/{issue_number}"
+                        )
+                        issue_data = await postgres_client.get_data(
+                            "link", "issues", issue_link
+                        )
                         if issue_data:
-                            issue_id = issue_data[0].get("issue_id", None) if issue_data[0] else None
+                            issue_id = (
+                                issue_data[0].get("issue_id", None)
+                                if issue_data[0]
+                                else None
+                            )
             except Exception as e:
                 print("Error getting issue from PR title - ", e)
                 print(f"{e.__traceback__.tb_lineno} - {str(e)}")
 
-
-            
             pr_data = {
                 "created_at": created_at,
-                "api_url":data['pull_request']['url'],
-                "html_url": data['pull_request']['html_url'],
-                "raised_by": data['pull_request']['user']['id'],
-                "raised_at":  raised_at,
-                "raised_by_username": data['pull_request']['user']['login'],
-                "status": data['action'],
+                "api_url": data["pull_request"]["url"],
+                "html_url": data["pull_request"]["html_url"],
+                "raised_by": data["pull_request"]["user"]["id"],
+                "raised_at": raised_at,
+                "raised_by_username": data["pull_request"]["user"]["login"],
+                "status": data["action"],
                 # "is_merged": data['pull_request']['merged'],
                 "is_merged": data.get("pull_request", {}).get("merged", False),
                 "merged_by": merged_by,
                 "merged_at": str(merged_at),
-                "merged_by_username":  merged_by_username,
-                "pr_id": data['pull_request']['id'],
-                "ticket_url": data['pull_request']['issue_url'],
-                "title": data['pull_request']['title'],
+                "merged_by_username": merged_by_username,
+                "pr_id": data["pull_request"]["id"],
+                "ticket_url": data["pull_request"]["issue_url"],
+                "title": data["pull_request"]["title"],
                 # "issue_id": issue_id if issue_id else None,
                 "issue_id": issue_id,
-                "ticket_complexity": None
+                "ticket_complexity": None,
             }
 
-            print('PR data ', pr_data)
-            
-            pr_exist = await postgres_client.get_data('pr_id', 'pr_history',  data['pull_request']['id'])
+            print("PR data ", pr_data)
+
+            pr_exist = await postgres_client.get_data(
+                "pr_id", "pr_history", data["pull_request"]["id"]
+            )
             if pr_exist:
-                save_data = await postgres_client.update_pr_history(pr_data["pr_id"],pr_data)
+                save_data = await postgres_client.update_pr_history(
+                    pr_data["pr_id"], pr_data
+                )
             else:
-                save_data = await postgres_client.add_data(pr_data,"pr_history")
-            print('saved data in PR ', save_data)            
-            if save_data == None:
+                save_data = await postgres_client.add_data(pr_data, "pr_history")
+            print("saved data in PR ", save_data)
+            if save_data is None:
                 logging.info("Failed to save data in pr_history")
 
-            user_id = data['pull_request']['user']['id']
+            user_id = data["pull_request"]["user"]["id"]
 
-            #get contributor_id and save to supabase
-            contributor = await postgres_client.get_data('github_id', 'contributors_registration', user_id)
+            # get contributor_id and save to supabase
+            contributor = await postgres_client.get_data(
+                "github_id", "contributors_registration", user_id
+            )
             # if not contributor:
             #     print('could not add contributors data contributor does not exist')
             #     return pr_data
@@ -147,18 +164,17 @@ class Pull_requestHandler(EventHandler):
                 contributor_id = contributor[0]["id"]
             else:
                 contributor_id = 0
-                print('contributor not registered assiging default value ', contributor_id)
+                print(
+                    "contributor not registered assiging default value ", contributor_id
+                )
 
-            issue_url = data['pull_request']['issue_url']
-            issue = await postgres_client.get_data('link', 'issues', issue_url, '*')
+            issue_url = data["pull_request"]["issue_url"]
+            await postgres_client.get_data("link", "issues", issue_url, "*")
 
-            #save activity to user_activity
-            await UserActivity.log_user_activity(data, 'pull_request')
+            # save activity to user_activity
+            await UserActivity.log_user_activity(data, "pull_request")
         except Exception as e:
-            print('exception in pr ', e)
+            print("exception in pr ", e)
             print(f"{e.__traceback__.tb_lineno} - {str(e)}")
             logging.info(e)
             raise Exception
-        
-        
-

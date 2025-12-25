@@ -71,7 +71,7 @@
 #     def __init__(self) -> None:
 #         self.headers = MARKDOWN_TEMPLATE_HEADERS
 #         return
-    
+
 #     # def flattenAndParse(self, rawMarkdown):
 #     #     markdown = mistune.create_markdown(renderer=HeadingRenderer())
 #     #     dummyHeader = "## Header\n\n"
@@ -89,7 +89,7 @@
 #     #         if f'{header}.text' in flatDict.keys():
 #     #             dataDict[header] = remove_special_characters(flatDict[f'{header}.text'])
 #     #     return dataDict
-    
+
 #     def flattenAndParse(self, rawMarkdown):
 #         # Check mistune version and renderer API
 #         markdown = mistune.create_markdown(renderer=HeadingRenderer())
@@ -106,7 +106,7 @@
 #                     dataDict[header] = remove_special_characters(flatDict[key])
 #             if f'{header}.text' in flatDict.keys():
 #                 dataDict[header] = remove_special_characters(flatDict[f'{header}.text'])
-        
+
 #         return dataDict
 
 # # test = """## Description
@@ -151,7 +151,7 @@
 # # React
 
 # # ### Mentor(s
-# # @KDwevedi 
+# # @KDwevedi
 
 # # ### Complexitie
 # # High
@@ -170,17 +170,18 @@
 # # header = "Mentor(s)"
 # # pattern = fr"(?:^{header}\.text$)|(?:\.{header}\.text$)"
 # # print(re.match(pattern, 'Mentor(s).text'))
-
-
+from typing import override
 
 
 import mistune
-import re, sys
+import re
+import sys
 import flatdict
 from fuzzywuzzy import fuzz
 
 # Example list for headers to match
-from utils.runtime_vars import MARKDOWN_TEMPLATE_HEADERS
+from utils import MARKDOWN_TEMPLATE_HEADERS
+
 
 def remove_special_characters(string):
     # Ignores '-' and ',' because '-' can be used in github usernames and ',' is needed for comma-separated values
@@ -197,7 +198,8 @@ class HeadingRenderer(mistune.HTMLRenderer):
         self.first_class_headers = MARKDOWN_TEMPLATE_HEADERS
 
     # Fix the function name to "heading" instead of "header"
-    def heading(self, text, level):
+    @override
+    def heading(self, text: str, level: int):
         matched_header = self.match_header(text)
         if level == 2:
             self.current_heading = matched_header
@@ -216,18 +218,26 @@ class HeadingRenderer(mistune.HTMLRenderer):
 
     def list_item(self, text):
         if self.current_subheading:
-            if not self.data[self.current_heading][self.current_subheading].get('items'):
-                self.data[self.current_heading][self.current_subheading]['items'] = []
-            self.data[self.current_heading][self.current_subheading]['items'].append(text)
+            if not self.data[self.current_heading][self.current_subheading].get(
+                "items"
+            ):
+                self.data[self.current_heading][self.current_subheading]["items"] = []
+            self.data[self.current_heading][self.current_subheading]["items"].append(
+                text
+            )
         return ""
 
     def paragraph(self, text):
         if self.current_heading:
             if self.current_subheading:
                 if self.data[self.current_heading][self.current_subheading]["text"]:
-                    self.data[self.current_heading][self.current_subheading]["text"] += "\n" + text
+                    self.data[self.current_heading][self.current_subheading][
+                        "text"
+                    ] += "\n" + text
                 else:
-                    self.data[self.current_heading][self.current_subheading]["text"] = text
+                    self.data[self.current_heading][self.current_subheading]["text"] = (
+                        text
+                    )
             else:
                 if self.data[self.current_heading]["text"]:
                     self.data[self.current_heading]["text"] += "\n" + text
@@ -249,18 +259,22 @@ class MarkdownHeaders:
             print(markdownDict, file=sys.stderr)
 
             # Flatten the dictionary
-            print('makrdown content', markdownDict, file=sys.stderr)
+            print("makrdown content", markdownDict, file=sys.stderr)
             flatDict = flatdict.FlatDict(markdownDict, delimiter=".")
             dataDict = {}
 
             # Process headers and clean up
             for header in self.headers:
-                pattern = fr"(?:^{re.escape(header)}\.text$)|(?:\.{re.escape(header)}\.text$)"
+                pattern = (
+                    rf"(?:^{re.escape(header)}\.text$)|(?:\.{re.escape(header)}\.text$)"
+                )
                 for key in flatDict.keys():
                     if re.search(pattern, key):
                         dataDict[header] = remove_special_characters(flatDict[key])
-                if f'{header}.text' in flatDict.keys():
-                    dataDict[header] = remove_special_characters(flatDict[f'{header}.text'])
+                if f"{header}.text" in flatDict.keys():
+                    dataDict[header] = remove_special_characters(
+                        flatDict[f"{header}.text"]
+                    )
 
             return dataDict
         except Exception as e:
@@ -269,5 +283,6 @@ class MarkdownHeaders:
 
 
 # Example usage:
-# test = "## Your Markdown Content Here"
-# print(MarkdownHeaders().flattenAndParse(test))
+if __name__ == "__main__":
+    test = "## Your Markdown Content Here"
+    print(MarkdownHeaders().flattenAndParse(test))

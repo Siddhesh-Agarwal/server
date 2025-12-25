@@ -8,7 +8,7 @@ pullRequestSchema = {
         "login": "user profile name who raised pr",
         "id": "user id that raised PR",
         "node_id": "graphql node id for user object",
-        "url": "API endpoint for user that raised PR"
+        "url": "API endpoint for user that raised PR",
     },
     "body": "contents of the pull request",
     "created_at": "date created",
@@ -27,7 +27,7 @@ pullRequestSchema = {
         "user": {
             "login": "user that created the branch",
             "id": "user id for user that created the branch",
-            "node_id": ""
+            "node_id": "",
         },
         "repo": {
             "id": "repository id",
@@ -37,11 +37,10 @@ pullRequestSchema = {
             "owner": {
                 "login": "repository owner",
                 "id": "repo owner id",
-                "node_id": "repo owner graphql node id"
+                "node_id": "repo owner graphql node id",
             },
             "description": "repository description",
-            "url": "api endpoint url for repo"
-            
+            "url": "api endpoint url for repo",
         },
         "base": "base branch info",
         "merged": "True if merged",
@@ -49,12 +48,13 @@ pullRequestSchema = {
         "comments": "no. of comments",
         "review_comments": "no. of review comments",
         "commits": "no. of commits",
-        "additions":"LoC added",
-        "deletions":"LoC removed",
-        "changed_files": "no. of files changed"
-    }
-
+        "additions": "LoC added",
+        "deletions": "LoC removed",
+        "changed_files": "no. of files changed",
+    },
 }
+
+
 def pullRequestDataValidator(data):
     if data.keys() == pullRequestSchema.keys():
         return True
@@ -62,15 +62,11 @@ def pullRequestDataValidator(data):
         return False
 
 
-
-
 class PullRequest:
-    def __init__(self, data=None, url=None, nodeId = None):
+    def __init__(self, data=None, url=None, nodeId=None):
         if data:
             self.data = data
-    
+
     @classmethod
     def fromDict(cls, data):
         return cls(data=data)
-                
-                

@@ -1,54 +1,55 @@
-from utils.github_api import GithubAPI
-import aiohttp, sys,os,httpx
-from utils.jwt_generator import GenerateJWT
-from events.ticketFeedbackHandler import TicketFeedbackHandler
-from utils.logging_file import logger
-
+from utils import GithubAPI, GenerateJWT, logger
+import aiohttp
+import sys
+import os
+import httpx
+from events import TicketFeedbackHandler
 
 
 class GithubAdapter:
     def __init__(self):
         return
-    
+
     async def get_github_data(code):
         try:
-            github_url_for_access_token = 'https://github.com/login/oauth/access_token'
+            github_url_for_access_token = "https://github.com/login/oauth/access_token"
             data = {
-                "client_id": os.getenv("GITHUB_CLIENT_ID"),
-                "client_secret": os.getenv("GITHUB_CLIENT_SECRET"),
-                "code": code
+                "client_id": os.environ["GITHUB_CLIENT_ID"],
+                "client_secret": os.environ["GITHUB_CLIENT_SECRET"],
+                "code": code,
             }
-            headers = {
-                "Accept": "application/json"
-            }
+            headers = {"Accept": "application/json"}
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(github_url_for_access_token, data=data, headers=headers) as response:
-                    res = await response.json()                    
+                async with session.post(
+                    github_url_for_access_token, data=data, headers=headers
+                ) as response:
+                    res = await response.json()
                     return res
-                
-        except Exception as e:
+
+        except Exception:
             raise Exception
-        
+
     async def get_github_user(header):
-        try:          
+        try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://api.github.com/user", headers=header) as user_response:
-                    response = await user_response.json()                    
+                async with session.get(
+                    "https://api.github.com/user", headers=header
+                ) as user_response:
+                    response = await user_response.json()
                     return response
-                
-        except Exception as e:
+
+        except Exception:
             return []
-        
-        
-    async def fetch_github_issues_from_repo(owner,repo):
+
+    async def fetch_github_issues_from_repo(owner, repo):
         try:
             url = f"https://api.github.com/repos/{owner}/{repo}/issues"
-    
+
             headers = {
-                'Accept': 'application/vnd.github+json',
-                'Authorization': f'Bearer {os.getenv("GithubPAT")}',
-                'X-GitHub-Api-Version': '2022-11-28'
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {os.environ['GITHUB_PAT']}",
+                "X-GitHub-Api-Version": "2022-11-28",
             }
 
             async with aiohttp.ClientSession() as session:
@@ -59,20 +60,19 @@ class GithubAdapter:
                     else:
                         print(f"Failed to get issues: {response.status}")
                         return None
-                        
+
         except Exception as e:
             logger.info(e)
             return None
-            
-        
-    async def get_classroom_data(assignment_id,page):
-        github_api_url = f'https://api.github.com/assignments/{assignment_id}/accepted_assignments?page={page}'
-        
+
+    async def get_classroom_data(assignment_id, page):
+        github_api_url = f"https://api.github.com/assignments/{assignment_id}/accepted_assignments?page={page}"
+
         # Define request headers
         headers = {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': 'Bearer'+' '+ os.getenv('API_TOKEN'),
-            'X-GitHub-Api-Version': '2022-11-28'
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {os.environ['API_TOKEN']}",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
 
         async with httpx.AsyncClient() as client:
@@ -82,99 +82,112 @@ class GithubAdapter:
                 # Check if the request was successful
                 if response.status_code == 200:
                     # Return the response from the GitHub API
-                    response,code = response.json(),200
-                    
-            except :
-                response = [],400
-                
-            return response,code
-    
+                    response, code = response.json(), 200
+
+            except Exception:
+                response = [], 400
+
+            return response, code
+
     async def createComment(self, owner, repo, issue_number, markdown_dict):
         token = await GithubAPI().authenticate_app_as_installation(repo_owner=owner)
 
-        url = f'https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments'
+        url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
         headers = {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': f'Bearer {token}',
-            'X-GitHub-Api-Version': '2022-11-28'
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
         data = {
-            'body': f'{TicketFeedbackHandler.feedBackMessageCreator(markdown_dict=markdown_dict)}'
+            "body": f"{TicketFeedbackHandler.feedBackMessageCreator(markdown_dict=markdown_dict)}"
         }
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=data) as response:
                 if response.status == 201:
-                    print('Comment created successfully.')
+                    print("Comment created successfully.")
                     return await response.json()
                 else:
-                    print(f'Error creating comment. Status code: {response.status}', sys.stderr)
+                    print(
+                        f"Error creating comment. Status code: {response.status}",
+                        sys.stderr,
+                    )
                     response_text = await response.text()
-                    print(f'Response body: {response_text}', file=sys.stderr)
-    
+                    print(f"Response body: {response_text}", file=sys.stderr)
+
     async def updateComment(self, owner, repo, comment_id, markdown_dict):
         token = await GithubAPI().authenticate_app_as_installation(repo_owner=owner)
-        url = f'https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}'
+        url = (
+            f"https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}"
+        )
         headers = {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': f'Bearer {token}',
-            'X-GitHub-Api-Version': '2022-11-28'
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
         data = {
-            'body': f'{TicketFeedbackHandler.feedBackMessageCreator(markdown_dict)}'
+            "body": f"{TicketFeedbackHandler.feedBackMessageCreator(markdown_dict)}"
         }
 
         async with aiohttp.ClientSession() as session:
             async with session.patch(url, headers=headers, json=data) as response:
                 if response.status == 200:
-                    print('Comment updated successfully.')
+                    print("Comment updated successfully.")
                     return await response.json()
                 else:
-                    print(f'Error updating comment. Status code: {response.status}', file=sys.stderr)
+                    print(
+                        f"Error updating comment. Status code: {response.status}",
+                        file=sys.stderr,
+                    )
                     response_text = await response.text()
-                    print(f'Response body: {response_text}',file=sys.stderr)
-    
-    
+                    print(f"Response body: {response_text}", file=sys.stderr)
+
     async def deleteComment(self, owner, repo, comment_id):
-            token = await GithubAPI().authenticate_app_as_installation(repo_owner=owner)
-            url = f'https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}'
-            headers = {
-                'Accept': 'application/vnd.github+json',
-                'Authorization': f'Bearer {token}',
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
+        token = await GithubAPI().authenticate_app_as_installation(repo_owner=owner)
+        url = (
+            f"https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}"
+        )
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.delete(url, headers=headers) as response:
-                    if response.status == 204:
-                        print('Comment deleted successfully.')
-                    else:
-                        print(f'Error deleting comment. Status code: {response.status}', file=sys.stderr)
-                        response_text = await response.text()
-                        print(f'Response body: {response_text}', file=sys.stderr)
+        async with aiohttp.ClientSession() as session:
+            async with session.delete(url, headers=headers) as response:
+                if response.status == 204:
+                    print("Comment deleted successfully.")
+                else:
+                    print(
+                        f"Error deleting comment. Status code: {response.status}",
+                        file=sys.stderr,
+                    )
+                    response_text = await response.text()
+                    print(f"Response body: {response_text}", file=sys.stderr)
+
     async def bot_comments(self):
-
         async def get_installations():
             token = GenerateJWT().__call__()
             headers = {
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/vnd.github.machine-man-preview+json'  # Required for accessing GitHub app APIs
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github.machine-man-preview+json",  # Required for accessing GitHub app APIs
             }
-            installations_url = 'https://api.github.com/app/installations'
+            installations_url = "https://api.github.com/app/installations"
 
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(installations_url) as response:
                     if response.status == 200:
                         installations = await response.json()
-                        return installations  
-                    
-                    
+                        return installations
+
         async def get_repositories(installation):
-            repositories_url = f'https://api.github.com/installation/repositories'
-            token = await GithubAPI().authenticate_app_as_installation(installation["account"]["login"])
+            repositories_url = "https://api.github.com/installation/repositories"
+            token = await GithubAPI().authenticate_app_as_installation(
+                installation["account"]["login"]
+            )
             headers = {
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/vnd.github.machine-man-preview+json'  # Required for accessing GitHub app APIs
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github.machine-man-preview+json",  # Required for accessing GitHub app APIs
             }
 
             async with aiohttp.ClientSession(headers=headers) as session:
@@ -182,21 +195,19 @@ class GithubAdapter:
                     # print(await response.json(), file=sys.stderr)
                     if response.status == 200:
                         data = await response.json()
-                        
+
                         return data["repositories"]
-        
 
         async def get_comments(repository):
             # print(repository, file=sys.stderr)
-            repository_owner = repository['owner']['login']
-            repository_name = repository['name']
-            comments_url = f'https://api.github.com/repos/{repository_owner}/{repository_name}/comments'
+            repository_owner = repository["owner"]["login"]
+            repository_name = repository["name"]
+            comments_url = f"https://api.github.com/repos/{repository_owner}/{repository_name}/comments"
 
             headers = {
-            'Authorization': f'Bearer {os.getenv("GithubPAT")}',
-            'Accept': 'application/vnd.github.machine-man-preview+json'  # Required for accessing GitHub app APIs
+                "Authorization": f"Bearer {os.environ['GithubPAT']}",
+                "Accept": "application/vnd.github.machine-man-preview+json",  # Required for accessing GitHub app APIs
             }
-            
 
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(comments_url) as response:
@@ -204,29 +215,29 @@ class GithubAdapter:
                         comments = await response.json()
                         # print(comments, file=sys.stderr)
                         return comments
-    
+
         comments = []
-        
+
         app_installations = await get_installations()
         for installation in app_installations:
             repositories = await get_repositories(installation)
             if repositories:
                 print("----RePO-----", file=sys.stderr)
                 for repo in repositories:
-                    print(installation["account"]["login"]+'/'+repo["name"], file=sys.stderr)
+                    print(
+                        installation["account"]["login"] + "/" + repo["name"],
+                        file=sys.stderr,
+                    )
                     # print(repo, file=sys.stderr)
                     # data = await get_comments(repo)
                     # if data:
                     #     comments+=data
-        
+
         count = 0
         for comment in comments:
             # print(comment)
             if comment["user"]["login"] == "c4gt-community-support[bot]":
-                count+=1
+                count += 1
         print(count, file=sys.stderr)
-        
+
         return app_installations
-                    
-                    
-        

@@ -1,22 +1,23 @@
-import aiohttp, os, sys
+import aiohttp
+import os
+import sys
 from shared_migrations.db.server import ServerQueries
 from aiographql.client import GraphQLClient, GraphQLRequest
 import asyncio
 
 headers = {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': f'Bearer {os.getenv("GithubPAT")}'
-        }
-# def getClosingPr(vars):
-    
+    "Accept": "application/vnd.github+json",
+    "Authorization": f"Bearer {os.environ['GithubPAT']}",
+}
 
-async def get_closing_pr(repo, owner, num):
+
+async def get_closing_pr(repo: str, owner: str, num: int):
     client = GraphQLClient(
-    endpoint="https://api.github.com/graphql",
-    headers={"Authographene graphql clienthttps://www.google.com/search?client=firefox-b-d&q=Graphene+graphql+client+tutorial&uds=G0gA-I3EdDuLDBN-OBGp26o8vlgXoi0YysJR4agOrCO6roSTeSbSDKjAxCiusdL_o8X0OsQ7YwfwJb42F4iCAQ&sa=X&ved=2ahUKEwjJnrOpzZeAAxUUZ2wGHWWBCPQQxKsJegQICxAB&ictx=0rization": f"Bearer {os.getenv('GithubPAT')}"},
+        endpoint="https://api.github.com/graphql",
+        headers={"Authorization": f"Bearer {os.environ['GithubPAT']}"},
     )
     request = GraphQLRequest(
-    query=f"""
+        query=f"""
 query {{
   repository(name: "{repo}", owner: "{owner}") {{
     issue(number: {num}) {{
@@ -47,16 +48,17 @@ query {{
     """
     )
     return await client.query(request=request)
-    # response = 
+    # response =
     # data = response.data
     # if data["repository"]["issue"]["timelineItems"]["nodes"][0]["closer"]:
     #     if data["repository"]["issue"]["timelineItems"]["nodes"][0]["closer"]["__typename"] == "PullRequest":
     #         return data["repository"]["issue"]["timelineItems"]["nodes"][0]["closer"]["url"]
-    #     else: 
+    #     else:
     #         return None
     # await client.session.close()
 
-async def get_pull_requests(owner, repo,status, page):
+
+async def get_pull_requests(owner: str, repo: str, status: str, page: int):
     """Gets pull requests from GitHub.
 
     Args:
@@ -71,14 +73,15 @@ async def get_pull_requests(owner, repo,status, page):
         "state": status,
         "per_page": 100,
         "page": page,
-        "created": "2023-07-01T01:01:01Z"
+        "created": "2023-07-01T01:01:01Z",
     }
     url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers, params=params) as resp:
             return await resp.json()
 
-async def get_pull_request(owner, repo, number):
+
+async def get_pull_request(owner: str, repo: str, number: int):
     """Gets a pull request from GitHub.
 
     Args:
@@ -92,6 +95,7 @@ async def get_pull_request(owner, repo, number):
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             return await resp.json()
+
 
 mentorship_repos = [
     "https://github.com/kiranma72/loinc-india",
@@ -186,7 +190,7 @@ mentorship_repos = [
     "https://github.com/ELEVATE-Project/project-frontend",
     "https://github.com/Samagra-Development/WarpSQL",
     "https://github.com/Samagra-Development/workflow",
-    "https://github.com/Samagra-Development/yaus"
+    "https://github.com/Samagra-Development/yaus",
 ]
 
 # arya-vats/arya-vats
@@ -408,25 +412,30 @@ repositories = list(set(mentorship_repos))
 # for ticket in tickets:
 #       if ticket["status"] == "closed":
 #             closedTickets.append(ticket)
-            
-  
 
 
-async def get_closed_tickets():
+async def get_closed_tickets() -> list:
     tickets = await ServerQueries().readAll("ccbp_tickets")
     if tickets is None:
         print("No tickets found.")
         return []
-    
+
     closedTickets = [ticket for ticket in tickets if ticket["status"] == "closed"]
     return closedTickets
 
+
 closed_tickets = asyncio.run(get_closed_tickets())
 
+
 async def getNewPRs():
-    for ticket in closedTickets:
-        components = ticket["url"].split('/')
-        print(await get_closing_pr(repo= components[-3], owner=components[-4], num=components[-1]), file=sys.stderr)
+    for ticket in closed_tickets:
+        components = ticket["url"].split("/")
+        print(
+            await get_closing_pr(
+                repo=components[-3], owner=components[-4], num=components[-1]
+            ),
+            file=sys.stderr,
+        )
     # for repo in repositories:
     #         components = repo.split('/')
     #         owner, repository = components[-2], components[-1]
@@ -446,7 +455,7 @@ async def getNewPRs():
     #                 # print(pr, pulls)
     #                 if isinstance(pr, dict) and pr.get("number"):
     #                         pull = await get_pull_request(owner, repository, pr["number"])
-    #                 else: 
+    #                 else:
     #                     continue
     #                 print(count,'/',len(pulls))
     #                 count+=1
@@ -482,7 +491,7 @@ async def getNewPRs():
     #                         "number_of_comments": pull["comments"] ,
     #                         "lines_of_code_added": pull["additions"] ,
     #                         "lines_of_code_removed": pull["deletions"] ,
-    #                         "number_of_files_changed": pull["changed_files"] 
+    #                         "number_of_files_changed": pull["changed_files"]
 
     #                 }
     #                         SupabaseInterface.get_instance().insert("mentorship_program_pull_request", p)
